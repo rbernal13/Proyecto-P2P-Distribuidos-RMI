@@ -43,10 +43,12 @@ public class Cliente {
 
 	public static void subir(InterfazS server, File src, File dest, String clientName) throws IOException {
 
+		
 		boolean state = copy(new FileInputStream(src), server.getOutputStream(dest, clientName));
 	}
 
-	public static void descargar(InterfazS server, File src, File dest, String clientName) {
+	public static void descargarLec(InterfazS server, File src, File dest, String clientName)  {
+		
 		try {
 			boolean state = copy(server.getInputStream(src, clientName), new FileOutputStream(dest));
 
@@ -54,7 +56,7 @@ public class Cliente {
 
 				File file1 = new File(dest.getName());
 				file1.delete();
-				System.out.println("gg");
+				
 			} else {
 
 			}
@@ -63,6 +65,28 @@ public class Cliente {
 			System.out.println("El archivo que intenta descargar esta siendo editado por otro usuario.");
 			e.printStackTrace();
 		}
+	 
+	}
+public static void descargar(InterfazS server, File src, File dest, String clientName) throws InterruptedException  {
+		
+	if(!cancelarDescarga()){
+		try {
+			boolean state = copy(server.getInputStream(src, clientName), new FileOutputStream(dest));
+
+			if (state == false) {
+
+				File file1 = new File(dest.getName());
+				file1.delete();
+				
+			} else {
+
+			}
+
+		} catch (IOException | NullPointerException e) {
+			System.out.println("El archivo que intenta descargar esta siendo editado por otro usuario.");
+			e.printStackTrace();
+		}
+	}
 	}
 
 	public static void update(InterfazS server, File src, File dest, String clientName) throws IOException {
@@ -78,7 +102,9 @@ public class Cliente {
 		ResourceBundle properties = PropertyResourceBundle.getBundle("Simple");
 		int port = Registry.REGISTRY_PORT;
 		try {
-			port = Integer.parseInt(properties.getString("server.port"));
+			System.out.println("Porfavor digite el puerto para iniciar la conexion:  ");
+			port = Integer.parseInt(arg[0]);
+			//port = Integer.parseInt(properties.getString("server.port"));
 
 		} catch (Exception e) {
 			port = Registry.REGISTRY_PORT;
@@ -89,13 +115,15 @@ public class Cliente {
 		}
 
 		Scanner sc = new Scanner(System.in);
-		System.out.println("Escriba la accion deseada:  (subir,descargar,leer,editar) : \n");
+		System.out.println(" *Recuerda primero subir un archivo * \n");
+		System.out.println("Escriba la accion deseada:  (subir,descargar,leer,editar,ayuda) : \n");
 		while (sc.hasNext()) {
-
+		  	
+			
 			command = sc.next();
 			System.out.println(command);
 
-			StringTokenizer tokens = new StringTokenizer(command, "-");
+			StringTokenizer tokens = new StringTokenizer(command, "_");
 			command = tokens.nextToken().trim();
 			try {
 				String serverIP = System.getProperty("server.ip");
@@ -116,23 +144,32 @@ public class Cliente {
 
 				} else if (command.equalsIgnoreCase("subir")) {
 
+					Servidor.addTrans(clientName, command);
 					String srcFilename = tokens.nextToken().trim();
 					String destFilename = tokens.nextToken().trim();
 
 					subir(server, new File(srcFilename), new File(destFilename), clientName);
+				}else if(command.equalsIgnoreCase("ayuda")){
+					
+					System.out.println("Ejemplo: subir_archivodeseado.ext_nombrenuevo.ext \n");
+					System.out.println("Ejemplo: descargar_archivodeseado.ext_nombrenuevo.ext \n");
+					System.out.println("Ejemplo: editar_archivodeseado.ext  \n");
+					System.out.println("Ejemplo: leer_archivodeseado.ext \n");
 
 				} else if (command.equalsIgnoreCase("descargar")) {
-
+					
+					Servidor.addTrans(clientName, command);
 					String srcFilename = tokens.nextToken().trim();
 					String destFilename = tokens.nextToken().trim();
 
 					descargar(server, new File(srcFilename), new File(destFilename), clientName);
 
 				} else if (command.equalsIgnoreCase("leer")) {
-
+					
+					Servidor.addTrans(clientName, command);
 					String srcFilename = tokens.nextToken().trim();
 
-					descargar(server, new File(srcFilename), new File(clientName + srcFilename), clientName);
+					descargarLec(server, new File(srcFilename), new File(clientName + srcFilename), clientName);
 					if (estado == true) {
 						boolean cerro = false;
 
@@ -142,33 +179,32 @@ public class Cliente {
 						File file1 = new File(clientName + srcFilename);
 						boolean isDeleteSuccess;
 						do {
-							// delete the file
+							
 							isDeleteSuccess = file1.delete();
 							if (isDeleteSuccess)
-								System.out.println(file1.getName() + " a sido borrado!");
+								System.out.println(file1.getName() +"  " + " ha sido borrado de la memoria cache!");
 							else {
-								// if not deleted then wait for 10 seconds for
-								// file to be closed
+								
 								System.out.println("La operacion de borrado fallo.");
 
 							}
-						} while (!isDeleteSuccess);// if not deleted then try
-													// again
+						} while (!isDeleteSuccess);
 					}
 
 				} else if (command.equalsIgnoreCase("editar")) {
 
+					Servidor.addTrans(clientName, command);
 					String srcFilename = tokens.nextToken().trim();
 					update(server, new File(srcFilename), new File(clientName + srcFilename), clientName);
 
 					Desktop.getDesktop().open(new File(clientName + srcFilename));
 
-					System.out.print("¿Ya termino de editar el archivo? S/N : ");
+					System.out.print("Usuario: " + clientName + "¿Ya a terminado de editar el archivo? S/N : ");
 					Scanner sc1 = new Scanner(System.in);
 
 					while (sc.hasNext()) {
 						String s1 = sc.next();
-						if (s1.equals("S")) {
+						if (s1.equalsIgnoreCase("s")) {
 							break;
 						}
 						System.out.print("Usuario: " + clientName + "¿Ya a terminado de editar el archivo? S/N : ");
@@ -179,17 +215,16 @@ public class Cliente {
 					File file1 = new File(clientName + srcFilename);
 					boolean isDeleteSuccess;
 					do {
-						// delete the file
+						
 						isDeleteSuccess = file1.delete();
 						if (isDeleteSuccess)
-							System.out.println(file1.getName() + " a sido borrado!");
+							System.out.println(file1.getName() +    " ha sido borrado con exito!");
 						else {
-							// if not deleted then wait for 10 seconds for file
-							// to be closed
+							
 							System.out.println("La operacion de borrado fallo.");
 
 						}
-					} while (!isDeleteSuccess);// if not deleted then try again
+					} while (!isDeleteSuccess);
 
 				}
 
@@ -202,16 +237,19 @@ public class Cliente {
 				System.out.println("SimpleClient exception: " + e.getMessage());
 				e.printStackTrace();
 			}
-		} /*
-			 * else { System.out.println("Usage: SimpleClient command");
-			 * System.out.println("\nExample: java  -jar simple-client.jar ping"
-			 * ); System.out.
-			 * println("\n         java  -jar simple-client.jar subir grupo3_taller5 archivo1.pdf"
-			 * ); System.out.
-			 * println("\n         java  -jar simple-client.jar descargar grupo3_taller5 [destfile.txt]"
-			 * ); System.out.
-			 * println("\n         java [-Djava.security.policy=rmi.policy] -jar simple-client.jar \"db2 reorg indexes all for table ADWSRNCT.F_INCIDENT\""
-			 * ); }
-			 */
+		}  
+	}
+	
+	private static boolean cancelarDescarga() throws InterruptedException{
+		Thread.sleep(5000);
+		System.out.println("¿Cancelar la descarga? (S/N)");
+		Scanner sc = new Scanner(System.in);
+		String res = sc.nextLine();
+		if(res.equalsIgnoreCase("N")){
+			return false;
+		}else{
+			System.out.println("Descarga cancelada");
+			return true;
+		}
 	}
 }

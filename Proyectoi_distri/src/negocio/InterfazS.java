@@ -7,41 +7,16 @@ import java.rmi.RemoteException;
 
 
 public interface InterfazS extends java.rmi.Remote {
-	/**
-	 * check if server is available
-	 * 
-	 * @return
-	 * @throws RemoteException
-	 */
+
 	String ping() throws RemoteException;
 	
-	/**
-	 * run a command on the report server
-	 * 
-	 * @param command
-	 * @param envp
-	 * @return
-	 * @throws RemoteException
-	 */
+
 	String runCommand(String command, String[] envp) throws RemoteException;
 	
-	/**
-	 * Get an output stream for a file to allow file downloads
-	 * @param clientName 
-	 * 
-	 * @param File f
-	 * @return
-	 * @throws IOException
-	 */
+
 	OutputStream getOutputStream(File f, String clientName) throws IOException;
 	
-	/**
-	 * Get an input stream for a file to allow file uploads
-	 * 
-	 * @param File f
-	 * @return
-	 * @throws IOException
-	 */
+
 	InputStream getInputStream(File f, String clientName) throws IOException;
 	
 	
