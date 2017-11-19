@@ -2,16 +2,20 @@ package negocio;
 
 public class Transaccion {
 
-	public static int idTrans;
-	public String duenio;
-	public String accion;
+	private static int idTrans;
+	private String duenio;
+	private String accion;
+	private String nombreArch;
+	private boolean estado;
 	
 	
-	public Transaccion(String duenio, String accion) {
+	public Transaccion(String duenio, String accion, String nombreArch) {
 		super();
 		this.duenio = duenio;
 		this.accion = accion;
+		this.nombreArch = nombreArch;
 		this.idTrans = idTrans ++;
+		this.estado = false;
 	}
 	public static int getIdTrans() {
 		return idTrans;
@@ -31,6 +35,19 @@ public class Transaccion {
 	public void setAccion(String accion) {
 		this.accion = accion;
 	}
+	public String getNombreArch() {
+		return nombreArch;
+	}
+	public void setNombreArch(String nombreArch) {
+		this.nombreArch = nombreArch;
+	}
+	public boolean getEstado() {
+		return estado;
+	}
+	public void setEstado(boolean estado) {
+		this.estado = estado;
+	}
+	
 	
 	
 }

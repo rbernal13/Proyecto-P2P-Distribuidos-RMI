@@ -1,8 +1,11 @@
 package negocio;
 import java.awt.Desktop;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -15,6 +18,7 @@ import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 import java.util.Scanner;
 import java.util.StringTokenizer;
+import java.util.Vector;
 
 public class Cliente {
 	final public static int BUF_SIZE = 1024 * 64;
@@ -113,12 +117,20 @@ public static void descargar(InterfazS server, File src, File dest, String clien
 		if (arg.length > 0) {
 			command = arg[0];
 		}
+		
+		if(login()!= true){
+			System.out.println("Cerrando programa.");
+			System.exit(1);
+		}else{
+			System.out.println("Bienvenido!");
+		}
 
 		Scanner sc = new Scanner(System.in);
 		System.out.println(" *Recuerda primero subir un archivo * \n");
 		System.out.println("Escriba la accion deseada:  (subir,descargar,leer,editar,ayuda) : \n");
 		while (sc.hasNext()) {
 		  	
+			Vector<Transaccion> aux = Servidor.getTransc();
 			
 			command = sc.next();
 			System.out.println(command);
@@ -144,9 +156,9 @@ public static void descargar(InterfazS server, File src, File dest, String clien
 
 				} else if (command.equalsIgnoreCase("subir")) {
 
-					Servidor.addTrans(clientName, command);
 					String srcFilename = tokens.nextToken().trim();
 					String destFilename = tokens.nextToken().trim();
+					Servidor.addTrans(clientName, command,srcFilename);
 
 					subir(server, new File(srcFilename), new File(destFilename), clientName);
 				}else if(command.equalsIgnoreCase("ayuda")){
@@ -158,17 +170,23 @@ public static void descargar(InterfazS server, File src, File dest, String clien
 
 				} else if (command.equalsIgnoreCase("descargar")) {
 					
-					Servidor.addTrans(clientName, command);
 					String srcFilename = tokens.nextToken().trim();
 					String destFilename = tokens.nextToken().trim();
-
-					descargar(server, new File(srcFilename), new File(destFilename), clientName);
-
-				} else if (command.equalsIgnoreCase("leer")) {
 					
-					Servidor.addTrans(clientName, command);
+				if(validarHaciaDelante(aux, srcFilename, command)){
+					
+					
+					descargar(server, new File(srcFilename), new File(destFilename), clientName);
+					Servidor.addTrans(clientName, command,srcFilename);
+				 }
+				
+				} else if (command.equalsIgnoreCase("leer")) {
 					String srcFilename = tokens.nextToken().trim();
-
+					
+					
+				 if(validarHaciaDelante(aux, srcFilename, command)){	
+					 
+					
 					descargarLec(server, new File(srcFilename), new File(clientName + srcFilename), clientName);
 					if (estado == true) {
 						boolean cerro = false;
@@ -190,13 +208,19 @@ public static void descargar(InterfazS server, File src, File dest, String clien
 							}
 						} while (!isDeleteSuccess);
 					}
-
+					Servidor.addTrans(clientName, command,srcFilename);
+				  }	
+				
 				} else if (command.equalsIgnoreCase("editar")) {
 
-					Servidor.addTrans(clientName, command);
+					
 					String srcFilename = tokens.nextToken().trim();
+					
+					
+				if(validarHaciaDelante(aux, srcFilename, command)){ 	
 					update(server, new File(srcFilename), new File(clientName + srcFilename), clientName);
-
+					Servidor.addTrans(clientName, command,srcFilename);
+					
 					Desktop.getDesktop().open(new File(clientName + srcFilename));
 
 					System.out.print("Usuario: " + clientName + "¿Ya a terminado de editar el archivo? S/N : ");
@@ -225,19 +249,21 @@ public static void descargar(InterfazS server, File src, File dest, String clien
 
 						}
 					} while (!isDeleteSuccess);
-
+					Servidor.addTrans(clientName, command,srcFilename);
 				}
 
 				else {
 					System.out.println(server.runCommand(command, null));
 				}
+			  }//FIN IF VALIDAR	
 
-				System.out.println("Escriba la accion deseada:  (subir,descargar,leer,editar) : \n");
+				System.out.println("Escriba la accion deseada:  (subir,descargar,leer,editar,ayuda) : \n");
 			} catch (Exception e) {
 				System.out.println("SimpleClient exception: " + e.getMessage());
 				e.printStackTrace();
 			}
-		}  
+				
+		} 	
 	}
 	
 	private static boolean cancelarDescarga() throws InterruptedException{
@@ -251,5 +277,65 @@ public static void descargar(InterfazS server, File src, File dest, String clien
 			System.out.println("Descarga cancelada");
 			return true;
 		}
+	}
+	
+	private static boolean validarHaciaDelante(Vector<Transaccion> transc, String nombreArch, String comando) throws InterruptedException{
+		
+		System.out.println("Entre a validar hacia delante");
+		for(Transaccion tr: transc){
+			System.out.println("Entre al for de validar");
+			if(tr.getNombreArch().equalsIgnoreCase(nombreArch) && tr.getAccion().equalsIgnoreCase("Editar")){
+			  if(!tr.getEstado())	
+				System.out.println("Entre al if");
+				System.out.println("Archivo actual"+nombreArch);
+				System.out.println("Nombre Archivo en el vector: "+tr.getNombreArch());
+				return false;
+			}else{
+				Thread.sleep(3000);
+			}
+		}
+		System.out.println("antes del return true");
+		return true;
+	}
+	
+	private static boolean login(){
+		String registro = null;
+		FileReader dbClientes = null;
+		String usuario, contrasena;
+		boolean valido = false;
+		try {
+			dbClientes = new FileReader ("dbClientes.txt");
+			BufferedReader br = new BufferedReader(dbClientes);
+			Scanner sc = new Scanner(System.in);
+			
+				
+			
+			System.out.println("Usuario: ");
+			usuario = sc.nextLine();
+			
+			System.out.println("Contrasena: ");
+			contrasena = sc.nextLine();
+			
+			while((registro = br.readLine())!= null){
+				String[] split = registro.split("\\s");
+				if(usuario.equals(split[0]) && contrasena.equals(split[1])){
+					System.out.println("Bienvenido "+usuario);
+					valido = true;
+				}else{
+					System.out.println("Usuario y/o Contrasena incorrecta.");
+				}
+			}
+				
+			br.close();
+			
+		} catch (FileNotFoundException e) {
+			System.out.println("Base de datos no encontrada.");
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.out.println("Error I/O");
+			e.printStackTrace();
+		}
+		return valido;
+		
 	}
 }
